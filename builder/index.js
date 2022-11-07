@@ -20,7 +20,7 @@ const {
 } = require('botbuilder');
 
 // This bot's main dialog.
-const { StateManagementBot } = require('./bots/stateManagementBot');
+const { StateManagementBot } = require('./bot');
 
 // Create HTTP server
 const server = restify.createServer();
