@@ -6,6 +6,7 @@ const fetch = require('node-fetch');
 
 // The accessor names for the conversation data state property accessors.
 const CONVERSATION_DATA_PROPERTY = 'conversationData';
+const RINNA_SUBSCRIPTIONKEY_ECCE = process.env.RINNA_SUBSCRIPTIONKEY_ECCE;
 
 class StateManagementBot extends ActivityHandler {
     constructor(conversationState) {
@@ -28,7 +29,7 @@ class StateManagementBot extends ActivityHandler {
                 headers: {
                     'Content-type': 'application/json',
                     'Cache-Control': 'no-cache',
-                    'Ocp-Apim-Subscription-Key': process.env.RINNA_SUBSCRIPTIONKEY_ECCE
+                    'Ocp-Apim-Subscription-Key': RINNA_SUBSCRIPTIONKEY_ECCE
                 },
                 body: JSON.stringify({
                     'knowledgePath': 'ECCE_Sample.txt',
