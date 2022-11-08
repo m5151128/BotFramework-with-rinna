@@ -74,17 +74,14 @@ class RinnaBot extends ActivityHandler {
                 }
                 case 'ec': {
                     reply = await this.getReplyWithEmotionClassification(text);
-                    conversationData.dialogHistory.push(reply);
                     break;
                 }
                 case 'pnc': {
                     reply = await this.getReplyWithPositiveNegativeClassification(text);
-                    conversationData.dialogHistory.push(reply);
                     break;
                 }
                 case 'pc': {
                     reply = await this.getReplyWithProfanityClassification(text);
-                    conversationData.dialogHistory.push(reply);
                     break;
                 }
                 }
