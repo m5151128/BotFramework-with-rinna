@@ -3,10 +3,9 @@
 
 const path = require('path');
 
-const dotenv = require('dotenv');
-// Import required bot configuration.
+// Read environment variables from .env file
 const ENV_FILE = path.join(__dirname, '.env');
-dotenv.config({ path: ENV_FILE });
+require('dotenv').config({ path: ENV_FILE });
 
 const restify = require('restify');
 
@@ -14,17 +13,19 @@ const restify = require('restify');
 // See https://aka.ms/bot-services to learn more about the different parts of a bot.
 const {
     CloudAdapter,
+    ConversationState,
+    MemoryStorage,
     ConfigurationBotFrameworkAuthentication
 } = require('botbuilder');
 
 // This bot's main dialog.
-const { EchoBot } = require('./bot');
+const { RinnaBot } = require('./bot');
 
 // Create HTTP server
 const server = restify.createServer();
 server.use(restify.plugins.bodyParser());
 
-server.listen(process.env.port || process.env.PORT || 3978, () => {
+server.listen(process.env.port || process.env.PORT || 3978, function() {
     console.log(`\n${ server.name } listening to ${ server.url }`);
     console.log('\nGet Bot Framework Emulator: https://aka.ms/botframework-emulator');
     console.log('\nTo talk to your bot, open the emulator select "Open Bot"');
@@ -36,8 +37,18 @@ const botFrameworkAuthentication = new ConfigurationBotFrameworkAuthentication(p
 // See https://aka.ms/about-bot-adapter to learn more about how bots work.
 const adapter = new CloudAdapter(botFrameworkAuthentication);
 
+// Define state store for your bot.
+// See https://aka.ms/about-bot-state to learn more about bot state.
+const memoryStorage = new MemoryStorage();
+
+// Create conversation state with in-memory storage provider.
+const conversationState = new ConversationState(memoryStorage);
+
+// Create the bot.
+const bot = new RinnaBot(conversationState);
+
 // Catch-all for errors.
-const onTurnErrorHandler = async (context, error) => {
+adapter.onTurnError = async (context, error) => {
     // This check writes out errors to console log .vs. app insights.
     // NOTE: In production environment, you should consider logging this to Azure
     //       application insights. See https://aka.ms/bottelemetry for telemetry
@@ -55,26 +66,12 @@ const onTurnErrorHandler = async (context, error) => {
     // Send a message to the user
     await context.sendActivity('The bot encountered an error or bug.');
     await context.sendActivity('To continue to run this bot, please fix the bot source code.');
+    // Clear out state
+    await conversationState.delete(context);
 };
-
-// Set the onTurnError for the singleton CloudAdapter.
-adapter.onTurnError = onTurnErrorHandler;
-
-// Create the main dialog.
-const myBot = new EchoBot();
 
 // Listen for incoming requests.
 server.post('/api/messages', async (req, res) => {
     // Route received a request to adapter for processing
-    await adapter.process(req, res, (context) => myBot.run(context));
-});
-
-// Listen for Upgrade requests for Streaming.
-server.on('upgrade', async (req, socket, head) => {
-    // Create an adapter scoped to this WebSocket connection to allow storing session data.
-    const streamingAdapter = new CloudAdapter(botFrameworkAuthentication);
-    // Set onTurnError for the CloudAdapter created for each connection.
-    streamingAdapter.onTurnError = onTurnErrorHandler;
-
-    await streamingAdapter.process(req, socket, head, (context) => myBot.run(context));
+    await adapter.process(req, res, (context) => bot.run(context));
 });
