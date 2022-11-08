@@ -24,32 +24,10 @@ class StateManagementBot extends ActivityHandler {
             conversationData.dialogHistory.push(turnContext.activity.text);
             console.log(conversationData.dialogHistory);
 
-            await fetch('https://api.rinna.co.jp/models/ecce', {
-                method: 'POST',
-                headers: {
-                    'Content-type': 'application/json',
-                    'Cache-Control': 'no-cache',
-                    'Ocp-Apim-Subscription-Key': RINNA_SUBSCRIPTIONKEY_ECCE
-                },
-                body: JSON.stringify({
-                    'knowledgePath': 'ECCE_Sample.txt',
-                    'query': turnContext.activity.text,
-                    'dialogHistory': conversationData.dialogHistory,
-                    'l2ReturnNum': 3,
-                    'l3ReturnNum': 1
-                })
-            })
-                .then(response => response.text())
-                .then(async (result) => {
-                    console.log(result);
-                    const data = JSON.parse(result);
-                    const replyText = data.resultResponseText;
-                    conversationData.dialogHistory.push(replyText);
-                    await turnContext.sendActivity(replyText);
-                    // By calling next() you ensure that the next BotHandler is run.
-                    await next();
-                })
-                .catch(error => console.log('error', error));
+            const replyText = await this.getReplyTextWithEcce(
+                turnContext.activity.text, conversationData.dialogHistory);
+            conversationData.dialogHistory.push(replyText);
+            await turnContext.sendActivity(replyText);
 
             // By calling next() you ensure that the next BotHandler is run.
             await next();
@@ -75,6 +53,35 @@ class StateManagementBot extends ActivityHandler {
 
         // Save any state changes. The load happened during the execution of the Dialog.
         await this.conversationState.saveChanges(context, false);
+    }
+
+    async getReplyTextWithEcce(text, dialogHistory) {
+        let replyText = '';
+
+        await fetch('https://api.rinna.co.jp/models/ecce', {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Ocp-Apim-Subscription-Key': RINNA_SUBSCRIPTIONKEY_ECCE
+            },
+            body: JSON.stringify({
+                'knowledgePath': 'ECCE_Sample.txt',
+                'query': text,
+                'dialogHistory': dialogHistory,
+                'l2ReturnNum': 3,
+                'l3ReturnNum': 1
+            })
+        })
+            .then(response => response.text())
+            .then(async (result) => {
+                console.log(result);
+                const data = JSON.parse(result);
+                replyText = data.resultResponseText;
+            })
+            .catch(error => console.log('error', error));
+
+        return replyText;
     }
 }
 
