@@ -10,6 +10,8 @@ const CONVERSATION_DATA_PROPERTY = 'conversationData';
 const COMMON_MESSAGE_ABOUT_HELP = '他のAPIを試したくなったら「ヘルプ」と送ってね';
 const RINNA_SUBSCRIPTIONKEY_ECCE = process.env.RINNA_SUBSCRIPTIONKEY_ECCE;
 const RINNA_SUBSCRIPTIONKEY_EMOTION_CLASSIFICATION = process.env.RINNA_SUBSCRIPTIONKEY_EMOTION_CLASSIFICATION;
+const RINNA_SUBSCRIPTIONKEY_POSITIVE_NEGATIVE_CLASSIFICATION = process.env.RINNA_SUBSCRIPTIONKEY_POSITIVE_NEGATIVE_CLASSIFICATION;
+const RINNA_SUBSCRIPTIONKEY_PROFANITY_CLASSIFICATION = process.env.RINNA_SUBSCRIPTIONKEY_PROFANITY_CLASSIFICATION;
 
 class RinnaBot extends ActivityHandler {
     constructor(conversationState) {
@@ -50,6 +52,16 @@ class RinnaBot extends ActivityHandler {
                 conversationData.mode = 'ec';
                 conversationData.dialogHistory = [];
                 break;
+            case 'Positive Negative Classification API':
+                await context.sendActivity(`テキストをPositive、Negative、Flatに分類します。${ COMMON_MESSAGE_ABOUT_HELP }`);
+                conversationData.mode = 'pnc';
+                conversationData.dialogHistory = [];
+                break;
+            case 'Profanity Classification API':
+                await context.sendActivity(`テキストに差別や残虐行為、政治・宗教等にかかわる不適切な表現を検出します。${ COMMON_MESSAGE_ABOUT_HELP }`);
+                conversationData.mode = 'pc';
+                conversationData.dialogHistory = [];
+                break;
             default: {
                 let replyText = '';
                 const mode = conversationData.mode;
@@ -62,6 +74,16 @@ class RinnaBot extends ActivityHandler {
                 }
                 case 'ec': {
                     replyText = await this.getReplyTextWithEmotionClassification(text);
+                    conversationData.dialogHistory.push(replyText);
+                    break;
+                }
+                case 'pnc': {
+                    replyText = await this.getReplyTextWithPositiveNegativeClassification(text);
+                    conversationData.dialogHistory.push(replyText);
+                    break;
+                }
+                case 'pc': {
+                    replyText = await this.getReplyTextWithProfanityClassification(text);
                     conversationData.dialogHistory.push(replyText);
                     break;
                 }
@@ -151,6 +173,57 @@ class RinnaBot extends ActivityHandler {
                 const data = JSON.parse(result);
                 const emotion = data.data[0].output.prediction_labels[0];
                 replyText = `この感情は「${ emotion }」だと思います`;
+            })
+            .catch(error => console.log('error', error));
+
+        return replyText;
+    }
+
+    async getReplyTextWithPositiveNegativeClassification(text) {
+        let replyText = '';
+
+        await fetch('https://api.rinna.co.jp/modules/positivenegative-classification', {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Ocp-Apim-Subscription-Key': RINNA_SUBSCRIPTIONKEY_POSITIVE_NEGATIVE_CLASSIFICATION
+            },
+            body: JSON.stringify({
+                'texts': [text],
+            })
+        })
+            .then(response => response.text())
+            .then(async (result) => {
+                console.log(result);
+                const data = JSON.parse(result);
+                const mind = data.output.prediction_labels[0];
+                replyText = `この心理状態は「${ mind }」だと思います`;
+            })
+            .catch(error => console.log('error', error));
+
+        return replyText;
+    }
+
+    async getReplyTextWithProfanityClassification(text) {
+        let replyText = '';
+
+        await fetch('https://api.rinna.co.jp/models/profanity-classification', {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Ocp-Apim-Subscription-Key': RINNA_SUBSCRIPTIONKEY_PROFANITY_CLASSIFICATION
+            },
+            body: JSON.stringify({
+                'text': text,
+            })
+        })
+            .then(response => response.text())
+            .then(async (result) => {
+                console.log(result);
+                const data = JSON.parse(result);
+                replyText = data.prediction ? '不適切な表現が含まれていると思います' : '不適切な表現は含まれていないと思います';
             })
             .catch(error => console.log('error', error));
 
