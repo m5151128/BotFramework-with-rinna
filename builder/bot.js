@@ -63,32 +63,32 @@ class RinnaBot extends ActivityHandler {
                 conversationData.dialogHistory = [];
                 break;
             default: {
-                let replyText = '';
+                let reply = '';
                 const mode = conversationData.mode;
                 switch (mode) {
                 case 'ecce': {
-                    replyText = await this.getReplyTextWithEcce(text, conversationData.dialogHistory);
+                    reply = await this.getReplyWithEcce(text, conversationData.dialogHistory);
                     conversationData.dialogHistory.push(text);
-                    conversationData.dialogHistory.push(replyText);
+                    conversationData.dialogHistory.push(reply);
                     break;
                 }
                 case 'ec': {
-                    replyText = await this.getReplyTextWithEmotionClassification(text);
-                    conversationData.dialogHistory.push(replyText);
+                    reply = await this.getReplyWithEmotionClassification(text);
+                    conversationData.dialogHistory.push(reply);
                     break;
                 }
                 case 'pnc': {
-                    replyText = await this.getReplyTextWithPositiveNegativeClassification(text);
-                    conversationData.dialogHistory.push(replyText);
+                    reply = await this.getReplyWithPositiveNegativeClassification(text);
+                    conversationData.dialogHistory.push(reply);
                     break;
                 }
                 case 'pc': {
-                    replyText = await this.getReplyTextWithProfanityClassification(text);
-                    conversationData.dialogHistory.push(replyText);
+                    reply = await this.getReplyWithProfanityClassification(text);
+                    conversationData.dialogHistory.push(reply);
                     break;
                 }
                 }
-                await context.sendActivity(replyText);
+                await context.sendActivity(reply);
             }
             }
 
@@ -124,8 +124,8 @@ class RinnaBot extends ActivityHandler {
         });
     }
 
-    async getReplyTextWithEcce(text, dialogHistory) {
-        let replyText = '';
+    async getReplyWithEcce(text, dialogHistory) {
+        let reply = '';
 
         await fetch('https://api.rinna.co.jp/models/ecce', {
             method: 'POST',
@@ -146,15 +146,15 @@ class RinnaBot extends ActivityHandler {
             .then(async (result) => {
                 console.log(result);
                 const data = JSON.parse(result);
-                replyText = data.resultResponseText;
+                reply = data.resultResponseText;
             })
             .catch(error => console.log('error', error));
 
-        return replyText;
+        return reply;
     }
 
-    async getReplyTextWithEmotionClassification(text) {
-        let replyText = '';
+    async getReplyWithEmotionClassification(text) {
+        let reply = '';
 
         await fetch('https://api.rinna.co.jp/models/emotion-classification', {
             method: 'POST',
@@ -172,15 +172,15 @@ class RinnaBot extends ActivityHandler {
                 console.log(result);
                 const data = JSON.parse(result);
                 const emotion = data.data[0].output.prediction_labels[0];
-                replyText = `この感情は「${ emotion }」だと思います`;
+                reply = `この感情は「${ emotion }」だと思います`;
             })
             .catch(error => console.log('error', error));
 
-        return replyText;
+        return reply;
     }
 
-    async getReplyTextWithPositiveNegativeClassification(text) {
-        let replyText = '';
+    async getReplyWithPositiveNegativeClassification(text) {
+        let reply = '';
 
         await fetch('https://api.rinna.co.jp/modules/positivenegative-classification', {
             method: 'POST',
@@ -198,15 +198,15 @@ class RinnaBot extends ActivityHandler {
                 console.log(result);
                 const data = JSON.parse(result);
                 const mind = data.output.prediction_labels[0];
-                replyText = `この心理状態は「${ mind }」だと思います`;
+                reply = `この心理状態は「${ mind }」だと思います`;
             })
             .catch(error => console.log('error', error));
 
-        return replyText;
+        return reply;
     }
 
-    async getReplyTextWithProfanityClassification(text) {
-        let replyText = '';
+    async getReplyWithProfanityClassification(text) {
+        let reply = '';
 
         await fetch('https://api.rinna.co.jp/models/profanity-classification', {
             method: 'POST',
@@ -223,11 +223,11 @@ class RinnaBot extends ActivityHandler {
             .then(async (result) => {
                 console.log(result);
                 const data = JSON.parse(result);
-                replyText = data.prediction ? '不適切な表現が含まれていると思います' : '不適切な表現は含まれていないと思います';
+                reply = data.prediction ? '不適切な表現が含まれていると思います' : '不適切な表現は含まれていないと思います';
             })
             .catch(error => console.log('error', error));
 
-        return replyText;
+        return reply;
     }
 }
 
