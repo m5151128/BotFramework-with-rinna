@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-const { ActivityHandler, CardFactory } = require('botbuilder');
+const { ActivityHandler, ActivityTypes, CardFactory } = require('botbuilder');
 const fetch = require('node-fetch');
 const ApoListCard = require('./resources/ApiListCard.json');
 
@@ -12,6 +12,7 @@ const RINNA_SUBSCRIPTIONKEY_ECCE = process.env.RINNA_SUBSCRIPTIONKEY_ECCE;
 const RINNA_SUBSCRIPTIONKEY_EMOTION_CLASSIFICATION = process.env.RINNA_SUBSCRIPTIONKEY_EMOTION_CLASSIFICATION;
 const RINNA_SUBSCRIPTIONKEY_POSITIVE_NEGATIVE_CLASSIFICATION = process.env.RINNA_SUBSCRIPTIONKEY_POSITIVE_NEGATIVE_CLASSIFICATION;
 const RINNA_SUBSCRIPTIONKEY_PROFANITY_CLASSIFICATION = process.env.RINNA_SUBSCRIPTIONKEY_PROFANITY_CLASSIFICATION;
+const RINNA_SUBSCRIPTIONKEY_TEXT_TO_IMAGE = process.env.RINNA_SUBSCRIPTIONKEY_TEXT_TO_IMAGE;
 
 class RinnaBot extends ActivityHandler {
     constructor(conversationState) {
@@ -62,6 +63,11 @@ class RinnaBot extends ActivityHandler {
                 conversationData.mode = 'pc';
                 conversationData.dialogHistory = [];
                 break;
+            case 'Text To Image API':
+                await context.sendActivity(`テキストから画像を生成します。${ COMMON_MESSAGE_ABOUT_HELP }`);
+                conversationData.mode = 'tti';
+                conversationData.dialogHistory = [];
+                break;
             default: {
                 let reply = '';
                 const mode = conversationData.mode;
@@ -82,6 +88,14 @@ class RinnaBot extends ActivityHandler {
                 }
                 case 'pc': {
                     reply = await this.getReplyWithProfanityClassification(text);
+                    break;
+                }
+                case 'tti': {
+                    await context.sendActivity('画像が生成されるまで待ってね');
+
+                    reply = { type: ActivityTypes.Message };
+                    reply.attachments = [await this.getReplyWithTextToImage(text)];
+                    reply.text = text;
                     break;
                 }
                 }
@@ -221,6 +235,36 @@ class RinnaBot extends ActivityHandler {
                 console.log(result);
                 const data = JSON.parse(result);
                 reply = data.prediction ? '不適切な表現が含まれていると思います' : '不適切な表現は含まれていないと思います';
+            })
+            .catch(error => console.log('error', error));
+
+        return reply;
+    }
+
+    async getReplyWithTextToImage(text) {
+        let reply = {};
+
+        await fetch('https://api.rinna.co.jp/models/tti/v2', {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Ocp-Apim-Subscription-Key': RINNA_SUBSCRIPTIONKEY_TEXT_TO_IMAGE
+            },
+            body: JSON.stringify({
+                'prompts': text,
+                'scale': 7.5
+            })
+        })
+            .then(response => response.text())
+            .then(async (result) => {
+                // console.log(result);
+                const data = JSON.parse(result);
+                reply = {
+                    'name': 'architecture-resize.png',
+                    'contentType': 'image/png',
+                    'contentUrl': data.image
+                };
             })
             .catch(error => console.log('error', error));
 

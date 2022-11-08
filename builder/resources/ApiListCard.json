@@ -27,6 +27,11 @@
         "type": "Action.Submit",
         "title": "Profanity Classification API",
         "data": "Profanity Classification API"
+      },
+      {
+        "type": "Action.Submit",
+        "title": "Text To Image API",
+        "data": "Text To Image API"
       }
     ]
 }
