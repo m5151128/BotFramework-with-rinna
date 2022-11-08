@@ -7,7 +7,9 @@ const ApoListCard = require('./resources/ApiListCard.json');
 
 // The accessor names for the conversation data state property accessors.
 const CONVERSATION_DATA_PROPERTY = 'conversationData';
+const COMMON_MESSAGE_ABOUT_HELP = '他のAPIを試したくなったら「ヘルプ」と送ってね';
 const RINNA_SUBSCRIPTIONKEY_ECCE = process.env.RINNA_SUBSCRIPTIONKEY_ECCE;
+const RINNA_SUBSCRIPTIONKEY_EMOTION_CLASSIFICATION = process.env.RINNA_SUBSCRIPTIONKEY_EMOTION_CLASSIFICATION;
 
 class RinnaBot extends ActivityHandler {
     constructor(conversationState) {
@@ -18,17 +20,55 @@ class RinnaBot extends ActivityHandler {
         // The state management objects for the conversation state.
         this.conversationState = conversationState;
 
-        this.onMessage(async (turnContext, next) => {
+        this.onMessage(async (context, next) => {
             // Get the state properties from the turn context.
             const conversationData = await this.conversationDataAccessor.get(
-                turnContext, { dialogHistory: [] });
-            conversationData.dialogHistory.push(turnContext.activity.text);
-            console.log(conversationData.dialogHistory);
+                context,
+                {
+                    mode: 'ecce',
+                    dialogHistory: []
+                }
+            );
 
-            const replyText = await this.getReplyTextWithEcce(
-                turnContext.activity.text, conversationData.dialogHistory);
-            conversationData.dialogHistory.push(replyText);
-            await turnContext.sendActivity(replyText);
+            const text = context.activity.text;
+            console.log(text);
+
+            switch (text) {
+            case 'ヘルプ':
+            case 'help':
+                await this.showApiListCard(context);
+                conversationData.mode = 'help';
+                conversationData.dialogHistory = [];
+                break;
+            case 'ECCE':
+                await context.sendActivity(`雑談を始めましょう。${ COMMON_MESSAGE_ABOUT_HELP }`);
+                conversationData.mode = 'ecce';
+                conversationData.dialogHistory = [];
+                break;
+            case 'Emotion Classification API':
+                await context.sendActivity(`テキストを怒り,恥ずかしい,嬉しい,悲しい,驚き,恐れ,意味不明,その他の感情に分類します。${ COMMON_MESSAGE_ABOUT_HELP }`);
+                conversationData.mode = 'ec';
+                conversationData.dialogHistory = [];
+                break;
+            default: {
+                let replyText = '';
+                const mode = conversationData.mode;
+                switch (mode) {
+                case 'ecce': {
+                    replyText = await this.getReplyTextWithEcce(text, conversationData.dialogHistory);
+                    conversationData.dialogHistory.push(text);
+                    conversationData.dialogHistory.push(replyText);
+                    break;
+                }
+                case 'ec': {
+                    replyText = await this.getReplyTextWithEmotionClassification(text);
+                    conversationData.dialogHistory.push(replyText);
+                    break;
+                }
+                }
+                await context.sendActivity(replyText);
+            }
+            }
 
             // By calling next() you ensure that the next BotHandler is run.
             await next();
@@ -85,6 +125,32 @@ class RinnaBot extends ActivityHandler {
                 console.log(result);
                 const data = JSON.parse(result);
                 replyText = data.resultResponseText;
+            })
+            .catch(error => console.log('error', error));
+
+        return replyText;
+    }
+
+    async getReplyTextWithEmotionClassification(text) {
+        let replyText = '';
+
+        await fetch('https://api.rinna.co.jp/models/emotion-classification', {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Ocp-Apim-Subscription-Key': RINNA_SUBSCRIPTIONKEY_EMOTION_CLASSIFICATION
+            },
+            body: JSON.stringify({
+                'data': [text],
+            })
+        })
+            .then(response => response.text())
+            .then(async (result) => {
+                console.log(result);
+                const data = JSON.parse(result);
+                const emotion = data.data[0].output.prediction_labels[0];
+                replyText = `この感情は「${ emotion }」だと思います`;
             })
             .catch(error => console.log('error', error));
 
