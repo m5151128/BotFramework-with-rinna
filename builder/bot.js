@@ -19,15 +19,9 @@ class StateManagementBot extends ActivityHandler {
         this.onMessage(async (turnContext, next) => {
             // Get the state properties from the turn context.
             const conversationData = await this.conversationDataAccessor.get(
-                turnContext, { promptedForUserName: false });
-
-            conversationData.timestamp = turnContext.activity.timestamp.toLocaleString();
-            conversationData.channelId = turnContext.activity.channelId;
-
-            // Display state data.
-            await turnContext.sendActivity(`sent: ${ turnContext.activity.text }`);
-            await turnContext.sendActivity(`Message received at: ${ conversationData.timestamp }`);
-            await turnContext.sendActivity(`Message received from: ${ conversationData.channelId }`);
+                turnContext, { dialogHistory: [] });
+            conversationData.dialogHistory.push(turnContext.activity.text);
+            console.log(conversationData.dialogHistory);
 
             await fetch('https://api.rinna.co.jp/models/ecce', {
                 method: 'POST',
@@ -39,7 +33,7 @@ class StateManagementBot extends ActivityHandler {
                 body: JSON.stringify({
                     'knowledgePath': 'ECCE_Sample.txt',
                     'query': turnContext.activity.text,
-                    'dialogHistory': [],
+                    'dialogHistory': conversationData.dialogHistory,
                     'l2ReturnNum': 3,
                     'l3ReturnNum': 1
                 })
@@ -49,6 +43,7 @@ class StateManagementBot extends ActivityHandler {
                     console.log(result);
                     const data = JSON.parse(result);
                     const replyText = data.resultResponseText;
+                    conversationData.dialogHistory.push(replyText);
                     await turnContext.sendActivity(replyText);
                     // By calling next() you ensure that the next BotHandler is run.
                     await next();
