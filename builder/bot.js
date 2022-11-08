@@ -8,7 +8,7 @@ const fetch = require('node-fetch');
 const CONVERSATION_DATA_PROPERTY = 'conversationData';
 const RINNA_SUBSCRIPTIONKEY_ECCE = process.env.RINNA_SUBSCRIPTIONKEY_ECCE;
 
-class StateManagementBot extends ActivityHandler {
+class RinnaBot extends ActivityHandler {
     constructor(conversationState) {
         super();
         // Create the state property accessors for the conversation data.
@@ -85,4 +85,4 @@ class StateManagementBot extends ActivityHandler {
     }
 }
 
-module.exports.StateManagementBot = StateManagementBot;
+module.exports.RinnaBot = RinnaBot;

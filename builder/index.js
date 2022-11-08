@@ -19,7 +19,7 @@ const {
 } = require('botbuilder');
 
 // This bot's main dialog.
-const { StateManagementBot } = require('./bot');
+const { RinnaBot } = require('./bot');
 
 // Create HTTP server
 const server = restify.createServer();
@@ -45,7 +45,7 @@ const memoryStorage = new MemoryStorage();
 const conversationState = new ConversationState(memoryStorage);
 
 // Create the bot.
-const bot = new StateManagementBot(conversationState);
+const bot = new RinnaBot(conversationState);
 
 // Catch-all for errors.
 adapter.onTurnError = async (context, error) => {
