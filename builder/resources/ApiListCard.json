@@ -1,0 +1,22 @@
+{
+    "type": "AdaptiveCard",
+    "version": "1.0",
+    "body": [
+      {
+        "type": "TextBlock",
+        "text": "試したいAPIを選択してください"
+      }
+    ],
+    "actions": [
+      {
+        "type": "Action.Submit",
+        "title": "ECCE",
+        "data": "ECCE"
+      },
+      {
+        "type": "Action.Submit",
+        "title": "Emotion Classification API",
+        "data": "Emotion Classification API"
+      }
+    ]
+}

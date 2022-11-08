@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-const { ActivityHandler } = require('botbuilder');
+const { ActivityHandler, CardFactory } = require('botbuilder');
 const fetch = require('node-fetch');
+const ApoListCard = require('./resources/ApiListCard.json');
 
 // The accessor names for the conversation data state property accessors.
 const CONVERSATION_DATA_PROPERTY = 'conversationData';
@@ -37,7 +38,7 @@ class RinnaBot extends ActivityHandler {
             const membersAdded = context.activity.membersAdded;
             for (let cnt = 0; cnt < membersAdded.length; ++cnt) {
                 if (membersAdded[cnt].id !== context.activity.recipient.id) {
-                    await context.sendActivity('Welcome to State Bot Sample. Type anything to get started.');
+                    await this.showApiListCard(context);
                 }
             }
             // By calling next() you ensure that the next BotHandler is run.
@@ -53,6 +54,12 @@ class RinnaBot extends ActivityHandler {
 
         // Save any state changes. The load happened during the execution of the Dialog.
         await this.conversationState.saveChanges(context, false);
+    }
+
+    async showApiListCard(context) {
+        await context.sendActivity({
+            attachments: [CardFactory.adaptiveCard(ApoListCard)]
+        });
     }
 
     async getReplyTextWithEcce(text, dialogHistory) {
