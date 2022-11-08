@@ -21,39 +21,39 @@ class StateManagementBot extends ActivityHandler {
             const conversationData = await this.conversationDataAccessor.get(
                 turnContext, { promptedForUserName: false });
 
-                conversationData.timestamp = turnContext.activity.timestamp.toLocaleString();
-                conversationData.channelId = turnContext.activity.channelId;
+            conversationData.timestamp = turnContext.activity.timestamp.toLocaleString();
+            conversationData.channelId = turnContext.activity.channelId;
 
-                // Display state data.
-                await turnContext.sendActivity(`sent: ${ turnContext.activity.text }`);
-                await turnContext.sendActivity(`Message received at: ${ conversationData.timestamp }`);
-                await turnContext.sendActivity(`Message received from: ${ conversationData.channelId }`);
+            // Display state data.
+            await turnContext.sendActivity(`sent: ${ turnContext.activity.text }`);
+            await turnContext.sendActivity(`Message received at: ${ conversationData.timestamp }`);
+            await turnContext.sendActivity(`Message received from: ${ conversationData.channelId }`);
 
-                await fetch('https://api.rinna.co.jp/models/ecce', {
-                    method: 'POST',
-                    headers: {
-                        'Content-type': 'application/json',
-                        'Cache-Control': 'no-cache',
-                        'Ocp-Apim-Subscription-Key': process.env.RINNA_SUBSCRIPTIONKEY_ECCE
-                    },
-                    body: JSON.stringify({
-                        'knowledgePath': 'ECCE_Sample.txt',
-                        'query': turnContext.activity.text,
-                        'dialogHistory': [],
-                        'l2ReturnNum': 3,
-                        'l3ReturnNum': 1
-                    })
+            await fetch('https://api.rinna.co.jp/models/ecce', {
+                method: 'POST',
+                headers: {
+                    'Content-type': 'application/json',
+                    'Cache-Control': 'no-cache',
+                    'Ocp-Apim-Subscription-Key': process.env.RINNA_SUBSCRIPTIONKEY_ECCE
+                },
+                body: JSON.stringify({
+                    'knowledgePath': 'ECCE_Sample.txt',
+                    'query': turnContext.activity.text,
+                    'dialogHistory': [],
+                    'l2ReturnNum': 3,
+                    'l3ReturnNum': 1
                 })
-                    .then(response => response.text())
-                    .then(async (result) => {
-                        console.log(result);
-                        const data = JSON.parse(result);
-                        const replyText = data.resultResponseText;
-                        await turnContext.sendActivity(replyText);
-                        // By calling next() you ensure that the next BotHandler is run.
-                        await next();
-                    })
-                    .catch(error => console.log('error', error));
+            })
+                .then(response => response.text())
+                .then(async (result) => {
+                    console.log(result);
+                    const data = JSON.parse(result);
+                    const replyText = data.resultResponseText;
+                    await turnContext.sendActivity(replyText);
+                    // By calling next() you ensure that the next BotHandler is run.
+                    await next();
+                })
+                .catch(error => console.log('error', error));
 
             // By calling next() you ensure that the next BotHandler is run.
             await next();
