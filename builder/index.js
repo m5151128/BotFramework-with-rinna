@@ -15,7 +15,6 @@ const {
     CloudAdapter,
     ConversationState,
     MemoryStorage,
-    UserState,
     ConfigurationBotFrameworkAuthentication
 } = require('botbuilder');
 
@@ -42,12 +41,11 @@ const adapter = new CloudAdapter(botFrameworkAuthentication);
 // See https://aka.ms/about-bot-state to learn more about bot state.
 const memoryStorage = new MemoryStorage();
 
-// Create conversation and user state with in-memory storage provider.
+// Create conversation state with in-memory storage provider.
 const conversationState = new ConversationState(memoryStorage);
-const userState = new UserState(memoryStorage);
 
 // Create the bot.
-const bot = new StateManagementBot(conversationState, userState);
+const bot = new StateManagementBot(conversationState);
 
 // Catch-all for errors.
 adapter.onTurnError = async (context, error) => {
