@@ -13,6 +13,7 @@ const RINNA_SUBSCRIPTIONKEY_EMOTION_CLASSIFICATION = process.env.RINNA_SUBSCRIPT
 const RINNA_SUBSCRIPTIONKEY_POSITIVE_NEGATIVE_CLASSIFICATION = process.env.RINNA_SUBSCRIPTIONKEY_POSITIVE_NEGATIVE_CLASSIFICATION;
 const RINNA_SUBSCRIPTIONKEY_PROFANITY_CLASSIFICATION = process.env.RINNA_SUBSCRIPTIONKEY_PROFANITY_CLASSIFICATION;
 const RINNA_SUBSCRIPTIONKEY_TEXT_TO_IMAGE = process.env.RINNA_SUBSCRIPTIONKEY_TEXT_TO_IMAGE;
+const RINNA_SUBSCRIPTIONKEY_TEXT_TO_SPEECG = process.env.RINNA_SUBSCRIPTIONKEY_TEXT_TO_SPEECG;
 
 class RinnaBot extends ActivityHandler {
     constructor(conversationState) {
@@ -68,6 +69,11 @@ class RinnaBot extends ActivityHandler {
                 conversationData.mode = 'tti';
                 conversationData.dialogHistory = [];
                 break;
+            case 'Text To Speech API':
+                await context.sendActivity(`テキストから自然な合成音声で発話します。${ COMMON_MESSAGE_ABOUT_HELP }`);
+                conversationData.mode = 'tts';
+                conversationData.dialogHistory = [];
+                break;
             default: {
                 let reply = '';
                 const mode = conversationData.mode;
@@ -95,6 +101,11 @@ class RinnaBot extends ActivityHandler {
 
                     reply = {};
                     reply.attachments = [await this.getReplyWithTextToImage(text)];
+                    break;
+                }
+                case 'tts': {
+                    reply = {};
+                    reply.attachments = [await this.getReplyWithTextToSpeech(text)];
                     break;
                 }
                 }
@@ -267,6 +278,46 @@ class RinnaBot extends ActivityHandler {
             text,
             CardFactory.images([reply])
         );
+    }
+
+    async getReplyWithTextToSpeech(text) {
+        let reply = '';
+
+        await fetch('https://api.rinna.co.jp/models/cttse/v2', {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Ocp-Apim-Subscription-Key': RINNA_SUBSCRIPTIONKEY_TEXT_TO_SPEECG
+            },
+            body: JSON.stringify({
+                'sid': 27,
+                'tid': 1,
+                'speed': 1,
+                'text': text,
+                'volume': 10,
+                'format': 'wav'
+            })
+        })
+            .then(response => response.text())
+            .then(async (result) => {
+                console.log(result);
+                const data = JSON.parse(result);
+                console.log(data.mediaContentUrl);
+                reply = data.mediaContentUrl;
+                // reply = {
+                //     'name': 'audio.wav',
+                //     'contentType': 'audio/wav',
+                //     'contentUrl': data.mediaContentUrl
+                // };
+            })
+            .catch(error => console.log('error', error));
+
+        return CardFactory.audioCard(
+            text,
+            [reply]
+        );
+        // return reply;
     }
 }
 

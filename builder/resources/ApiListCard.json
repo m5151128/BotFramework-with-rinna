@@ -32,6 +32,11 @@
         "type": "Action.Submit",
         "title": "Text To Image API",
         "data": "Text To Image API"
+      },
+      {
+        "type": "Action.Submit",
+        "title": "Text To Speech API",
+        "data": "Text To Speech API"
       }
     ]
 }
