@@ -93,9 +93,8 @@ class RinnaBot extends ActivityHandler {
                 case 'tti': {
                     await context.sendActivity('画像が生成されるまで待ってね');
 
-                    reply = { type: ActivityTypes.Message };
+                    reply = {};
                     reply.attachments = [await this.getReplyWithTextToImage(text)];
-                    reply.text = text;
                     break;
                 }
                 }
@@ -242,7 +241,7 @@ class RinnaBot extends ActivityHandler {
     }
 
     async getReplyWithTextToImage(text) {
-        let reply = {};
+        let reply = '';
 
         await fetch('https://api.rinna.co.jp/models/tti/v2', {
             method: 'POST',
@@ -260,15 +259,14 @@ class RinnaBot extends ActivityHandler {
             .then(async (result) => {
                 // console.log(result);
                 const data = JSON.parse(result);
-                reply = {
-                    'name': 'architecture-resize.png',
-                    'contentType': 'image/png',
-                    'contentUrl': data.image
-                };
+                reply = data.image;
             })
             .catch(error => console.log('error', error));
 
-        return reply;
+        return CardFactory.heroCard(
+            text,
+            CardFactory.images([reply])
+        );
     }
 }
 
