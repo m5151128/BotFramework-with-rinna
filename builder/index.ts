@@ -1,25 +1,25 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-const path = require("path");
+import * as path from "path";
 
 // Read environment variables from .env file
-const ENV_FILE = path.join(__dirname, ".env");
-require("dotenv").config({ path: ENV_FILE });
+import { config } from "dotenv";
+const ENV_FILE = path.join(__dirname, "..", ".env");
+config({ path: ENV_FILE });
 
-const restify = require("restify");
+import * as restify from "restify";
 
 // Import required bot services.
-// See https://aka.ms/bot-services to learn more about the different parts of a bot.
-const {
+import {
   CloudAdapter,
+  ConfigurationBotFrameworkAuthentication,
   ConversationState,
   MemoryStorage,
-  ConfigurationBotFrameworkAuthentication,
-} = require("botbuilder");
+} from "botbuilder";
 
 // This bot's main dialog.
-const { RinnaBot } = require("./bot");
+import { RinnaBot } from "./bot";
 
 // Create HTTP server
 const server = restify.createServer();

@@ -1,9 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-const { ActivityHandler, ActivityTypes, CardFactory } = require("botbuilder");
-const fetch = require("node-fetch");
-const ApoListCard = require("./resources/ApiListCard.json");
+import {
+  ActivityHandler,
+  CardFactory,
+  ConversationState
+} from "botbuilder";
+
+import fetch from "node-fetch";
+
+import ApiListCard from "./resources/ApiListCard.json";
 
 // The accessor names for the conversation data state property accessors.
 const CONVERSATION_DATA_PROPERTY = "conversationData";
@@ -21,11 +27,13 @@ const RINNA_SUBSCRIPTIONKEY_TEXT_TO_IMAGE =
 const RINNA_SUBSCRIPTIONKEY_TEXT_TO_SPEECG =
   process.env.RINNA_SUBSCRIPTIONKEY_TEXT_TO_SPEECG;
 
-class RinnaBot extends ActivityHandler {
-  constructor(conversationState) {
+export class RinnaBot extends ActivityHandler {
+  private conversationState: ConversationState;
+
+  constructor(conversationState: ConversationState) {
     super();
     // Create the state property accessors for the conversation data.
-    this.conversationDataAccessor = conversationState.createProperty(
+    const conversationDataAccessor = conversationState.createProperty(
       CONVERSATION_DATA_PROPERTY
     );
 
@@ -34,13 +42,10 @@ class RinnaBot extends ActivityHandler {
 
     this.onMessage(async (context, next) => {
       // Get the state properties from the turn context.
-      const conversationData = await this.conversationDataAccessor.get(
-        context,
-        {
-          mode: "ecce",
-          dialogHistory: [],
-        }
-      );
+      const conversationData = await conversationDataAccessor.get(context, {
+        mode: "ecce",
+        dialogHistory: [],
+      });
 
       const text = context.activity.text;
       console.log(text);
@@ -95,7 +100,7 @@ class RinnaBot extends ActivityHandler {
           conversationData.dialogHistory = [];
           break;
         default: {
-          let reply = "";
+          let reply;
           const mode = conversationData.mode;
           switch (mode) {
             case "ecce": {
@@ -109,16 +114,19 @@ class RinnaBot extends ActivityHandler {
             }
             case "ec": {
               reply = await this.getReplyWithEmotionClassification(text);
+              await context.sendActivity(reply);
               break;
             }
             case "pnc": {
               reply = await this.getReplyWithPositiveNegativeClassification(
                 text
               );
+              await context.sendActivity(reply);
               break;
             }
             case "pc": {
               reply = await this.getReplyWithProfanityClassification(text);
+              await context.sendActivity(reply);
               break;
             }
             case "tti": {
@@ -126,15 +134,17 @@ class RinnaBot extends ActivityHandler {
 
               reply = {};
               reply.attachments = [await this.getReplyWithTextToImage(text)];
+              await context.sendActivity(reply);
               break;
             }
             case "tts": {
               reply = {};
               reply.attachments = [await this.getReplyWithTextToSpeech(text)];
+              await context.sendActivity(reply);
               break;
             }
           }
-          await context.sendActivity(reply);
+          //   await context.sendActivity(reply);
         }
       }
 
@@ -166,7 +176,7 @@ class RinnaBot extends ActivityHandler {
 
   async showApiListCard(context) {
     await context.sendActivity({
-      attachments: [CardFactory.adaptiveCard(ApoListCard)],
+      attachments: [CardFactory.adaptiveCard(ApiListCard)],
     });
   }
 
