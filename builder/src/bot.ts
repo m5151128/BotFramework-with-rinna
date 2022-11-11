@@ -1,11 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import {
-  ActivityHandler,
-  CardFactory,
-  ConversationState
-} from "botbuilder";
+import { ActivityHandler, CardFactory, ConversationState } from "botbuilder";
 
 import fetch from "node-fetch";
 

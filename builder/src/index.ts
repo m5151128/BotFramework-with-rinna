@@ -14,6 +14,7 @@ import * as restify from "restify";
 import {
   CloudAdapter,
   ConfigurationBotFrameworkAuthentication,
+  ConfigurationBotFrameworkAuthenticationOptions,
   ConversationState,
   MemoryStorage,
 } from "botbuilder";
@@ -34,7 +35,7 @@ server.listen(process.env.port || process.env.PORT || 3978, function () {
 });
 
 const botFrameworkAuthentication = new ConfigurationBotFrameworkAuthentication(
-  process.env
+  process.env as ConfigurationBotFrameworkAuthenticationOptions
 );
 
 // Create adapter.
