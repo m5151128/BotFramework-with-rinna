@@ -4,7 +4,7 @@
 
 rinna developers: https://developers.rinna.co.jp/ にアクセスし会員登録する。  
 サインインしたら各APIにて「Subscribe」からキーを発行する。  
-発行されたキーを`.env`の`RINNA_SUBSCRIPTIONKEY_ECCE`に設定する。
+発行されたキーを`.env`に設定する。
 
 | API                                 | .env                                                   |
 |-------------------------------------|--------------------------------------------------------|
