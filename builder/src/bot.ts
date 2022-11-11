@@ -106,6 +106,7 @@ export class RinnaBot extends ActivityHandler {
               );
               conversationData.dialogHistory.push(text);
               conversationData.dialogHistory.push(reply);
+              await context.sendActivity(reply);
               break;
             }
             case "ec": {
@@ -140,7 +141,6 @@ export class RinnaBot extends ActivityHandler {
               break;
             }
           }
-          //   await context.sendActivity(reply);
         }
       }
 
