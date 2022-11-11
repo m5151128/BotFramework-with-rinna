@@ -42,6 +42,7 @@ export class RinnaBot extends ActivityHandler {
         mode: "ecce",
         dialogHistory: [],
       });
+      console.log(conversationData);
 
       const text = context.activity.text;
       console.log(text);
@@ -98,6 +99,7 @@ export class RinnaBot extends ActivityHandler {
         default: {
           let reply;
           const mode = conversationData.mode;
+          console.log(`mode: ${mode}`);
           switch (mode) {
             case "ecce": {
               reply = await this.getReplyWithEcce(
