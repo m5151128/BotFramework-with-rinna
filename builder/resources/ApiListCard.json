@@ -17,6 +17,26 @@
         "type": "Action.Submit",
         "title": "Emotion Classification API",
         "data": "Emotion Classification API"
+      },
+      {
+        "type": "Action.Submit",
+        "title": "Positive Negative Classification API",
+        "data": "Positive Negative Classification API"
+      },
+      {
+        "type": "Action.Submit",
+        "title": "Profanity Classification API",
+        "data": "Profanity Classification API"
+      },
+      {
+        "type": "Action.Submit",
+        "title": "Text To Image API",
+        "data": "Text To Image API"
+      },
+      {
+        "type": "Action.Submit",
+        "title": "Text To Speech API",
+        "data": "Text To Speech API"
       }
     ]
 }

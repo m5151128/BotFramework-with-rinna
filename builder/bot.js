@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-const { ActivityHandler, CardFactory } = require('botbuilder');
+const { ActivityHandler, ActivityTypes, CardFactory } = require('botbuilder');
 const fetch = require('node-fetch');
 const ApoListCard = require('./resources/ApiListCard.json');
 
@@ -10,6 +10,10 @@ const CONVERSATION_DATA_PROPERTY = 'conversationData';
 const COMMON_MESSAGE_ABOUT_HELP = '他のAPIを試したくなったら「ヘルプ」と送ってね';
 const RINNA_SUBSCRIPTIONKEY_ECCE = process.env.RINNA_SUBSCRIPTIONKEY_ECCE;
 const RINNA_SUBSCRIPTIONKEY_EMOTION_CLASSIFICATION = process.env.RINNA_SUBSCRIPTIONKEY_EMOTION_CLASSIFICATION;
+const RINNA_SUBSCRIPTIONKEY_POSITIVE_NEGATIVE_CLASSIFICATION = process.env.RINNA_SUBSCRIPTIONKEY_POSITIVE_NEGATIVE_CLASSIFICATION;
+const RINNA_SUBSCRIPTIONKEY_PROFANITY_CLASSIFICATION = process.env.RINNA_SUBSCRIPTIONKEY_PROFANITY_CLASSIFICATION;
+const RINNA_SUBSCRIPTIONKEY_TEXT_TO_IMAGE = process.env.RINNA_SUBSCRIPTIONKEY_TEXT_TO_IMAGE;
+const RINNA_SUBSCRIPTIONKEY_TEXT_TO_SPEECG = process.env.RINNA_SUBSCRIPTIONKEY_TEXT_TO_SPEECG;
 
 class RinnaBot extends ActivityHandler {
     constructor(conversationState) {
@@ -50,23 +54,62 @@ class RinnaBot extends ActivityHandler {
                 conversationData.mode = 'ec';
                 conversationData.dialogHistory = [];
                 break;
+            case 'Positive Negative Classification API':
+                await context.sendActivity(`テキストをPositive、Negative、Flatに分類します。${ COMMON_MESSAGE_ABOUT_HELP }`);
+                conversationData.mode = 'pnc';
+                conversationData.dialogHistory = [];
+                break;
+            case 'Profanity Classification API':
+                await context.sendActivity(`テキストに差別や残虐行為、政治・宗教等にかかわる不適切な表現を検出します。${ COMMON_MESSAGE_ABOUT_HELP }`);
+                conversationData.mode = 'pc';
+                conversationData.dialogHistory = [];
+                break;
+            case 'Text To Image API':
+                await context.sendActivity(`テキストから画像を生成します。${ COMMON_MESSAGE_ABOUT_HELP }`);
+                conversationData.mode = 'tti';
+                conversationData.dialogHistory = [];
+                break;
+            case 'Text To Speech API':
+                await context.sendActivity(`テキストから自然な合成音声で発話します。${ COMMON_MESSAGE_ABOUT_HELP }`);
+                conversationData.mode = 'tts';
+                conversationData.dialogHistory = [];
+                break;
             default: {
-                let replyText = '';
+                let reply = '';
                 const mode = conversationData.mode;
                 switch (mode) {
                 case 'ecce': {
-                    replyText = await this.getReplyTextWithEcce(text, conversationData.dialogHistory);
+                    reply = await this.getReplyWithEcce(text, conversationData.dialogHistory);
                     conversationData.dialogHistory.push(text);
-                    conversationData.dialogHistory.push(replyText);
+                    conversationData.dialogHistory.push(reply);
                     break;
                 }
                 case 'ec': {
-                    replyText = await this.getReplyTextWithEmotionClassification(text);
-                    conversationData.dialogHistory.push(replyText);
+                    reply = await this.getReplyWithEmotionClassification(text);
+                    break;
+                }
+                case 'pnc': {
+                    reply = await this.getReplyWithPositiveNegativeClassification(text);
+                    break;
+                }
+                case 'pc': {
+                    reply = await this.getReplyWithProfanityClassification(text);
+                    break;
+                }
+                case 'tti': {
+                    await context.sendActivity('画像が生成されるまで待ってね');
+
+                    reply = {};
+                    reply.attachments = [await this.getReplyWithTextToImage(text)];
+                    break;
+                }
+                case 'tts': {
+                    reply = {};
+                    reply.attachments = [await this.getReplyWithTextToSpeech(text)];
                     break;
                 }
                 }
-                await context.sendActivity(replyText);
+                await context.sendActivity(reply);
             }
             }
 
@@ -102,8 +145,8 @@ class RinnaBot extends ActivityHandler {
         });
     }
 
-    async getReplyTextWithEcce(text, dialogHistory) {
-        let replyText = '';
+    async getReplyWithEcce(text, dialogHistory) {
+        let reply = '';
 
         await fetch('https://api.rinna.co.jp/models/ecce', {
             method: 'POST',
@@ -124,15 +167,15 @@ class RinnaBot extends ActivityHandler {
             .then(async (result) => {
                 console.log(result);
                 const data = JSON.parse(result);
-                replyText = data.resultResponseText;
+                reply = data.resultResponseText;
             })
             .catch(error => console.log('error', error));
 
-        return replyText;
+        return reply;
     }
 
-    async getReplyTextWithEmotionClassification(text) {
-        let replyText = '';
+    async getReplyWithEmotionClassification(text) {
+        let reply = '';
 
         await fetch('https://api.rinna.co.jp/models/emotion-classification', {
             method: 'POST',
@@ -150,11 +193,131 @@ class RinnaBot extends ActivityHandler {
                 console.log(result);
                 const data = JSON.parse(result);
                 const emotion = data.data[0].output.prediction_labels[0];
-                replyText = `この感情は「${ emotion }」だと思います`;
+                reply = `この感情は「${ emotion }」だと思います`;
             })
             .catch(error => console.log('error', error));
 
-        return replyText;
+        return reply;
+    }
+
+    async getReplyWithPositiveNegativeClassification(text) {
+        let reply = '';
+
+        await fetch('https://api.rinna.co.jp/modules/positivenegative-classification', {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Ocp-Apim-Subscription-Key': RINNA_SUBSCRIPTIONKEY_POSITIVE_NEGATIVE_CLASSIFICATION
+            },
+            body: JSON.stringify({
+                'texts': [text],
+            })
+        })
+            .then(response => response.text())
+            .then(async (result) => {
+                console.log(result);
+                const data = JSON.parse(result);
+                const mind = data.output.prediction_labels[0];
+                reply = `この心理状態は「${ mind }」だと思います`;
+            })
+            .catch(error => console.log('error', error));
+
+        return reply;
+    }
+
+    async getReplyWithProfanityClassification(text) {
+        let reply = '';
+
+        await fetch('https://api.rinna.co.jp/models/profanity-classification', {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Ocp-Apim-Subscription-Key': RINNA_SUBSCRIPTIONKEY_PROFANITY_CLASSIFICATION
+            },
+            body: JSON.stringify({
+                'text': text,
+            })
+        })
+            .then(response => response.text())
+            .then(async (result) => {
+                console.log(result);
+                const data = JSON.parse(result);
+                reply = data.prediction ? '不適切な表現が含まれていると思います' : '不適切な表現は含まれていないと思います';
+            })
+            .catch(error => console.log('error', error));
+
+        return reply;
+    }
+
+    async getReplyWithTextToImage(text) {
+        let reply = '';
+
+        await fetch('https://api.rinna.co.jp/models/tti/v2', {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Ocp-Apim-Subscription-Key': RINNA_SUBSCRIPTIONKEY_TEXT_TO_IMAGE
+            },
+            body: JSON.stringify({
+                'prompts': text,
+                'scale': 7.5
+            })
+        })
+            .then(response => response.text())
+            .then(async (result) => {
+                // console.log(result);
+                const data = JSON.parse(result);
+                reply = data.image;
+            })
+            .catch(error => console.log('error', error));
+
+        return CardFactory.heroCard(
+            text,
+            CardFactory.images([reply])
+        );
+    }
+
+    async getReplyWithTextToSpeech(text) {
+        let reply = '';
+
+        await fetch('https://api.rinna.co.jp/models/cttse/v2', {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Ocp-Apim-Subscription-Key': RINNA_SUBSCRIPTIONKEY_TEXT_TO_SPEECG
+            },
+            body: JSON.stringify({
+                'sid': 27,
+                'tid': 1,
+                'speed': 1,
+                'text': text,
+                'volume': 10,
+                'format': 'wav'
+            })
+        })
+            .then(response => response.text())
+            .then(async (result) => {
+                console.log(result);
+                const data = JSON.parse(result);
+                console.log(data.mediaContentUrl);
+                reply = data.mediaContentUrl;
+                // reply = {
+                //     'name': 'audio.wav',
+                //     'contentType': 'audio/wav',
+                //     'contentUrl': data.mediaContentUrl
+                // };
+            })
+            .catch(error => console.log('error', error));
+
+        return CardFactory.audioCard(
+            text,
+            [reply]
+        );
+        // return reply;
     }
 }
 
